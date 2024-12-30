@@ -22,6 +22,14 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    const marathonCollection = client.db('marathonManagementSystem').collection('marathons')
+    const usersCollection = client.db('marathonManagementSystem').collection('users')
+
+    //get all marathons card from marathonCollection
+    app.get('/marathons', async (req, res) => {
+      const result = await marathonCollection.find().toArray()
+      res.send(result)
+    })
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
