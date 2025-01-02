@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
@@ -55,7 +55,6 @@ async function run() {
       const token = jwt.sign(email, process.env.SECRET_KEY, {
         expiresIn: '365d',
       })
-      console.log(token)
       res
         .cookie('token', token, {
           httpOnly: true,
@@ -76,6 +75,13 @@ async function run() {
         .send({ success: true })
     })
 
+    // save a jobData in db
+    app.post('/add-marathon', async (req, res) => {
+      const marathonData = req.body
+      const result = await marathonCollection.insertOne(marathonData)
+      res.send(result)
+    })
+
     //get 6 marathons card for homepage from marathonCollection
     app.get("/home_marathons", async (req, res) => {
       const result = await marathonCollection.find().limit(6).toArray()
@@ -85,6 +91,14 @@ async function run() {
     //get all marathons card from marathonCollection
     app.get('/marathons', async (req, res) => {
       const result = await marathonCollection.find().toArray()
+      res.send(result)
+    })
+
+    // get a single marathon details data by id from db
+    app.get('/marathon/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await marathonCollection.findOne(query)
       res.send(result)
     })
 
