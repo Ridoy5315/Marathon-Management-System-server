@@ -142,6 +142,16 @@ async function run() {
       const updateRegistrationCount = await marathonCollection.updateOne(filter, update)
       res.send(result);
     });
+
+    // get registered marathons data for specific user from db
+    app.get('/registered-marathon/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = { "applicant.userEmail" : email };
+      const result = await registeredCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
