@@ -8,7 +8,7 @@ require("dotenv").config();
 const port = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: ["http://localhost:5173"],
+  origin: ["http://localhost:5174"],
   credentials: true,
   optionalSuccessStatus: 200,
 };
@@ -143,6 +143,43 @@ async function run() {
       res.send(result);
     });
 
+    // get marathons data for specific user from db
+    app.get('/marathon-data/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = { "organizer.email" : email };
+      const result = await marathonCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    // get marathon data for update form
+    app.get('/marathon-update-form/:id', async(req, res) => {
+      const id = req.params.id;
+      const filter = { _id : new ObjectId(id) };
+      const result = await marathonCollection.findOne(filter);
+      res.send(result);
+    })
+
+     //update marathon data for specific user
+     app.put('/update-marathon/:id', async(req, res) => {
+      const id = req.params.id
+      const updateData = req.body
+      const updated = {
+        $set: updateData,
+      }
+      const query = {_id: new ObjectId(id)}
+      const options = {upsert: true}
+      const result = await marathonCollection.updateOne(query, updated, options)
+      res.send(result)
+    })
+
+    // delete a marathon from db
+    app.delete('/marathon-list/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await marathonCollection.deleteOne(query)
+      res.send(result)
+    })
+
     // get registered marathons data for specific user from db
     app.get('/registered-marathon/:email', async(req, res) => {
       const email = req.params.email;
@@ -173,14 +210,14 @@ async function run() {
       res.send(result)
     })
 
-    // delete a job from db
+    // delete a registration marathon from db
     app.delete('/apply-list/:id', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await registeredCollection.deleteOne(query)
       res.send(result)
     })
-    
+
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
