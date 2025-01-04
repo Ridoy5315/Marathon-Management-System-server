@@ -152,6 +152,28 @@ async function run() {
     })
 
 
+    // get registered marathon data for update form
+    app.get('/update-form/:id', async(req, res) => {
+      const id = req.params.id;
+      const filter = { _id : new ObjectId(id) };
+      const result = await registeredCollection.findOne(filter);
+      res.send(result);
+    })
+
+     //update registration marathon data
+     app.put('/update-data/:id', async(req, res) => {
+      const id = req.params.id
+      const updateData = req.body
+      const updated = {
+        $set: updateData,
+      }
+      const query = {_id: new ObjectId(id)}
+      const options = {upsert: true}
+      const result = await registeredCollection.updateOne(query, updated, options)
+      res.send(result)
+    })
+
+
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
