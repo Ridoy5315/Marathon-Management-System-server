@@ -96,7 +96,16 @@ async function run() {
 
     //get all marathons card from marathonCollection
     app.get("/marathons", verifyToken, async (req, res) => {
-      const result = await marathonCollection.find().toArray();
+      const sort = req.query.sort
+      let options = {}
+      if (sort){
+        options = {
+          sort: {
+            addMarathonDate: -1
+          }
+        }
+      } 
+      const result = await marathonCollection.find().sort(options.sort).toArray();
       res.send(result);
     });
 
