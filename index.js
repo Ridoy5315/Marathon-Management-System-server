@@ -8,7 +8,7 @@ require("dotenv").config();
 const port = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: ["http://localhost:5174"],
+  origin: ["http://localhost:5173"],
   credentials: true,
   optionalSuccessStatus: 200,
 };
@@ -82,7 +82,7 @@ async function run() {
     });
 
     // save a jobData in db
-    app.post("/add-marathon", async (req, res) => {
+    app.post("/add-marathon", verifyToken, async (req, res) => {
       const marathonData = req.body;
       const result = await marathonCollection.insertOne(marathonData);
       res.send(result);
@@ -95,13 +95,13 @@ async function run() {
     });
 
     //get all marathons card from marathonCollection
-    app.get("/marathons", async (req, res) => {
+    app.get("/marathons", verifyToken, async (req, res) => {
       const result = await marathonCollection.find().toArray();
       res.send(result);
     });
 
     // get a single marathon details data by id from db
-    app.get("/marathon/:id", async (req, res) => {
+    app.get("/marathon/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await marathonCollection.findOne(query);
@@ -120,7 +120,7 @@ async function run() {
     });
 
     // save a registered marathon data in db
-    app.post("/add-registered-marathon", async (req, res) => {
+    app.post("/add-registered-marathon", verifyToken, async (req, res) => {
       const marathonData = req.body;
       const query = {
         "applicant.userEmail": marathonData.applicant.userEmail,
@@ -144,15 +144,19 @@ async function run() {
     });
 
     // get marathons data for specific user from db
-    app.get('/marathon-data/:email', async(req, res) => {
+    app.get('/marathon-data/:email', verifyToken, async(req, res) => {
       const email = req.params.email;
+      const decodedEmail = req.user?.email
+      if(decodedEmail !== email){
+        return res.status(401).send({message: 'unauthorized access'})
+      }
       const query = { "organizer.email" : email };
       const result = await marathonCollection.find(query).toArray();
       res.send(result);
     })
 
     // get marathon data for update form
-    app.get('/marathon-update-form/:id', async(req, res) => {
+    app.get('/marathon-update-form/:id', verifyToken, async(req, res) => {
       const id = req.params.id;
       const filter = { _id : new ObjectId(id) };
       const result = await marathonCollection.findOne(filter);
@@ -160,7 +164,7 @@ async function run() {
     })
 
      //update marathon data for specific user
-     app.put('/update-marathon/:id', async(req, res) => {
+     app.put('/update-marathon/:id', verifyToken, async(req, res) => {
       const id = req.params.id
       const updateData = req.body
       const updated = {
@@ -173,7 +177,7 @@ async function run() {
     })
 
     // delete a marathon from db
-    app.delete('/marathon-list/:id', async (req, res) => {
+    app.delete('/marathon-list/:id', verifyToken, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await marathonCollection.deleteOne(query)
@@ -181,16 +185,30 @@ async function run() {
     })
 
     // get registered marathons data for specific user from db
-    app.get('/registered-marathon/:email', async(req, res) => {
+    app.get('/registered-marathon/:email', verifyToken, async(req, res) => {
       const email = req.params.email;
-      const query = { "applicant.userEmail" : email };
-      const result = await registeredCollection.find(query).toArray();
+      const search = req.query.search;
+      const decodedEmail = req.user?.email
+      if(decodedEmail !==  email){
+        return res.status(401).send({ message: 'unauthorized access' })
+      }
+      let query = {
+        "applicant.userEmail" : email,
+      }
+      if(search){
+        query["marathon_title"] = {
+          $regex: search, 
+          $options: 'i'
+        };
+      }
+      
+      const result = await registeredCollection.find( query ).toArray();
       res.send(result);
     })
 
 
     // get registered marathon data for update form
-    app.get('/update-form/:id', async(req, res) => {
+    app.get('/update-form/:id', verifyToken, async(req, res) => {
       const id = req.params.id;
       const filter = { _id : new ObjectId(id) };
       const result = await registeredCollection.findOne(filter);
@@ -198,7 +216,7 @@ async function run() {
     })
 
      //update registration marathon data
-     app.put('/update-data/:id', async(req, res) => {
+     app.put('/update-data/:id', verifyToken, async(req, res) => {
       const id = req.params.id
       const updateData = req.body
       const updated = {
@@ -211,7 +229,7 @@ async function run() {
     })
 
     // delete a registration marathon from db
-    app.delete('/apply-list/:id', async (req, res) => {
+    app.delete('/apply-list/:id',verifyToken, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await registeredCollection.deleteOne(query)
